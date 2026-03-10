@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Master Explorer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: 
+         - Layout: Dashboard style with a persistent sidebar (desktop) / drawer (mobile) for navigation and a main content area.
+         - Logic: 'Single Point of Truth' state object holding the current active section. contentData object maps IDs to HTML/JS render logic.
+         - Sections:
+            1. Basics: Data Types (Chart.js Viz of sizes), Syntax.
+            2. Control Flow: Interactive tabs for Switch/Loops.
+            3. OOP: Grid of cards for the 4 pillars. Click to expand.
+            4. Collections: Interactive table.
+            5. Memory: Visual split pane for Stack vs Heap.
+            6. Interview: Flashcard game.
+         - Justification: Users rarely read cheatsheets linear. They seek specific topics. This structure supports "random access" learning.
+    -->
+
+    <!-- Visualization & Content Choices:
+         1. Data Types: Bar Chart (Chart.js) -> Visualizes 'Size (bytes)' to give a sense of memory footprint.
+         2. OOP: Interactive Cards -> Break down dense text into digestible chunks.
+         3. Memory: Conceptual Diagram (HTML/CSS) -> Visual distinction between Stack (LIFO) and Heap (Objects).
+         4. Interview: Flashcards -> Active recall method for testing knowledge.
+         5. Icons: Unicode characters (No SVG).
+    -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'warm-bg': '#F5F5F0',
+                        'warm-surface': '#FFFFFF',
+                        'warm-text': '#2D2D2A',
+                        'warm-accent': '#C9A66B', // Sand/Gold
+                        'warm-accent-hover': '#B08D55',
+                        'code-bg': '#2E2E2E',
+                        'code-text': '#E6E6E6'
+                    },
+                    fontFamily: {
+                        sans: ['Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                        mono: ['Consolas', 'Monaco', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for code blocks */
+        .code-block::-webkit-scrollbar {
+            height: 8px;
+            background-color: #2E2E2E;
+        }
+        .code-block::-webkit-scrollbar-thumb {
+            background-color: #555;
+            border-radius: 4px;
+        }
+        
+        /* Flip Card CSS */
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        .flip-card-front {
+            background-color: #FFFFFF;
+            color: #2D2D2A;
+            border: 2px solid #E5E5E5;
+        }
+        .flip-card-back {
+            background-color: #2D2D2A;
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        /* Chart Container Specifics */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-warm-bg text-warm-text h-screen flex overflow-hidden font-sans">
+
+    <!-- Mobile Menu Button -->
+    <div class="md:hidden fixed top-4 right-4 z-50">
+        <button id="menuBtn" class="bg-warm-accent text-white p-2 rounded shadow-lg">
+            ☰
+        </button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="transform -translate-x-full md:translate-x-0 transition-transform duration-300 fixed md:static inset-y-0 left-0 w-64 bg-warm-surface border-r border-gray-200 z-40 flex flex-col shadow-xl md:shadow-none">
+        <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+            <h1 class="text-xl font-bold tracking-tight text-warm-accent">☕ Java<span class="text-warm-text">Master</span></h1>
+            <button id="closeMenuBtn" class="md:hidden text-gray-500 text-xl">×</button>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1 px-3" id="nav-list">
+                <!-- Nav items injected by JS -->
+            </ul>
+        </nav>
+
+        <div class="p-4 border-t border-gray-100 text-xs text-center text-gray-400">
+            Interactive Cheatsheet
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto relative w-full" id="main-scroll">
+        <div class="max-w-5xl mx-auto p-4 md:p-8 pb-20">
+            
+            <!-- Dynamic Content Container -->
+            <div id="content-area" class="space-y-8 animate-fade-in">
+                <!-- Content injected by JS -->
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Data Source ---
+        const appData = {
+            sections: [
+                { id: 'dashboard', title: 'Home', icon: '🏠' },
+                { id: 'basics', title: 'Basics & Syntax', icon: '📝' },
+                { id: 'control', title: 'Control Flow', icon: '🔀' },
+                { id: 'oop', title: 'OOP Pillars', icon: '🏗️' },
+                { id: 'collections', title: 'Collections', icon: '📦' },
+                { id: 'exceptions', title: 'Exceptions', icon: '⚠️' },
+                { id: 'modern', title: 'Modern Java 8+', icon: '🚀' },
+                { id: 'memory', title: 'Memory Theory', icon: '🧠' },
+                { id: 'interview', title: 'Interview Prep', icon: '🎓' }
+            ],
+            content: {
+                dashboard: {
+                    title: "Welcome to Java Master",
+                    intro: "Your interactive companion for mastering Java syntax, concepts, and theory. Select a module from the sidebar to begin exploring.",
+                    features: [
+                        { title: "Syntax & Types", desc: "Interactive visualization of primitive data types.", icon: "📊" },
+                        { title: "OOP Explorer", desc: "Deep dive into Encapsulation, Inheritance, Polymorphism, and Abstraction.", icon: "🧩" },
+                        { title: "Memory Model", desc: "Visual comparison of Stack vs Heap memory.", icon: "💾" },
+                        { title: "Interview Prep", desc: "Flashcards for common technical questions.", icon: "⚡" }
+                    ]
+                },
+                basics: {
+                    title: "Basics & Syntax",
+                    intro: "Java is a statically-typed language. This section visualizes the fundamental data types and the core structure of a Java application.",
+                    types: [
+                        { name: 'int', desc: 'Integer numbers', size: 4, unit: 'bytes' },
+                        { name: 'double', desc: 'Floating-point', size: 8, unit: 'bytes' },
+                        { name: 'char', desc: 'Unicode character', size: 2, unit: 'bytes' },
+                        { name: 'boolean', desc: 'True/False', size: 0.125, unit: 'bits (approx 1 bit)' } // approximate for viz
+                    ],
+                    code: `public class Main {
+    public static void main(String[] args) {
+        // Entry point of the application
+        System.out.println("Hello, World!");
+    }
+}`
+                },
+                control: {
+                    title: "Control Flow",
+                    intro: "Direct the flow of execution using conditionals and loops. Explore the syntax for making decisions and repeating tasks.",
+                    snippets: [
+                        {
+                            label: "Switch Expression (Java 14+)",
+                            code: `String result = switch (day) {
+    case "MONDAY", "FRIDAY" -> "Work";
+    case "SUNDAY" -> "Rest";
+    default -> "Unknown";
+};`
+                        },
+                        {
+                            label: "Enhanced For Loop",
+                            code: `for (String item : items) {
+    // Process item
+    System.out.println(item);
+}`
+                        }
+                    ]
+                },
+                oop: {
+                    title: "Object-Oriented Programming",
+                    intro: "Java is built on four fundamental pillars. Interact with the cards below to understand how they structure code.",
+                    pillars: [
+                        { title: "Encapsulation", summary: "Bundling data & methods.", details: "Restricting access using private, public, and protected modifiers to protect object integrity." },
+                        { title: "Inheritance", summary: "Reusability mechanism.", details: "A child class acquires properties of a parent class using the 'extends' keyword." },
+                        { title: "Polymorphism", summary: "One interface, many forms.", details: "Includes Overloading (compile-time) and Overriding (runtime) methods." },
+                        { title: "Abstraction", summary: "Hiding complexity.", details: "Using Abstract Classes and Interfaces to define 'what' instead of 'how'." }
+                    ]
+                },
+                collections: {
+                    title: "Collections Framework",
+                    intro: "Choosing the right data structure is critical for performance. Compare the characteristics of Lists, Sets, and Maps.",
+                    data: [
+                        { interface: "List", impl: "ArrayList", feature: "Ordered, allows duplicates, fast index access." },
+                        { interface: "List", impl: "LinkedList", feature: "Better for frequent insertions/deletions." },
+                        { interface: "Set", impl: "HashSet", feature: "No duplicates, unordered uniqueness." },
+                        { interface: "Map", impl: "HashMap", feature: "Key-Value pairs, fast lookup by key." }
+                    ]
+                },
+                exceptions: {
+                    title: "Exception Handling",
+                    intro: "Manage runtime errors gracefully using Try-Catch blocks to prevent application crashes.",
+                    code: `try {
+    int result = 10 / 0;
+} catch (ArithmeticException e) {
+    System.out.println("Cannot divide by zero!");
+} finally {
+    System.out.println("This always executes.");
+}`
+                },
+                modern: {
+                    title: "Modern Java (8+)",
+                    intro: "Leverage functional programming concepts like Lambdas and Streams to write concise and readable code.",
+                    concepts: [
+                        { name: "Lambda Expressions", code: `nums.forEach(n -> System.out.println(n));` },
+                        { name: "Streams API", code: `List<String> filtered = list.stream()
+    .filter(s -> s.startsWith("J"))
+    .map(String::toUpperCase)
+    .collect(Collectors.toList());` }
+                    ]
+                },
+                memory: {
+                    title: "Memory Management",
+                    intro: "Understand how Java manages memory automatically using the Stack and Heap.",
+                    stack: "Stores local variables and function calls. LIFO (Last-In, First-Out). Fast access.",
+                    heap: "Stores Objects and instance variables. Managed by Garbage Collector. Larger pool."
+                },
+                interview: {
+                    title: "Interview Concepts",
+                    intro: "Test your knowledge on common Java interview questions. Click a card to reveal the answer.",
+                    cards: [
+                        { q: "What is `static`?", a: "Belongs to the class, not a specific instance." },
+                        { q: "What is `final`?", a: "Immutable variable, non-overridable method, or non-inheritable class." },
+                        { q: "this vs super", a: "'this' = current instance. 'super' = parent instance." },
+                        { q: "Why are Strings immutable?", a: "Security, Thread Safety, and String Pool caching optimization." }
+                    ]
+                }
+            }
+        };
+
+        // --- State Management ---
+        let currentTab = 'dashboard';
+        let chartInstance = null;
+
+        // --- Core Functions ---
+
+        function init() {
+            renderSidebar();
+            renderContent(currentTab);
+            
+            // Mobile menu listeners
+            document.getElementById('menuBtn').addEventListener('click', toggleMobileMenu);
+            document.getElementById('closeMenuBtn').addEventListener('click', toggleMobileMenu);
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('nav-list');
+            list.innerHTML = '';
+            appData.sections.forEach(section => {
+                const li = document.createElement('li');
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors ${currentTab === section.id ? 'bg-warm-accent text-white font-medium shadow-md' : 'text-gray-600 hover:bg-gray-100'}`;
+                btn.innerHTML = `<span>${section.icon}</span><span>${section.title}</span>`;
+                btn.onclick = () => {
+                    currentTab = section.id;
+                    renderSidebar(); // Re-render to update active state
+                    renderContent(section.id);
+                    if(window.innerWidth < 768) toggleMobileMenu();
+                };
+                li.appendChild(btn);
+                list.appendChild(li);
+            });
+        }
+
+        function renderContent(tabId) {
+            const container = document.getElementById('content-area');
+            const data = appData.content[tabId];
+            
+            // reset container
+            container.innerHTML = '';
+            window.scrollTo(0,0);
+
+            // Header Section
+            const header = document.createElement('div');
+            header.className = "mb-8";
+            header.innerHTML = `
+                <h2 class="text-3xl font-bold text-warm-text mb-2">${data.title}</h2>
+                <p class="text-lg text-gray-600 leading-relaxed border-l-4 border-warm-accent pl-4">${data.intro}</p>
+            `;
+            container.appendChild(header);
+
+            // Specific Content Logic
+            if (tabId === 'dashboard') renderDashboard(container, data);
+            else if (tabId === 'basics') renderBasics(container, data);
+            else if (tabId === 'control') renderControl(container, data);
+            else if (tabId === 'oop') renderOOP(container, data);
+            else if (tabId === 'collections') renderCollections(container, data);
+            else if (tabId === 'exceptions') renderExceptions(container, data);
+            else if (tabId === 'modern') renderModern(container, data);
+            else if (tabId === 'memory') renderMemory(container, data);
+            else if (tabId === 'interview') renderInterview(container, data);
+        }
+
+        // --- Renderers ---
+
+        function renderDashboard(container, data) {
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
+            
+            data.features.forEach(feat => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow";
+                card.innerHTML = `
+                    <div class="text-4xl mb-4">${feat.icon}</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">${feat.title}</h3>
+                    <p class="text-gray-600">${feat.desc}</p>
+                `;
+                grid.appendChild(card);
+            });
+            container.appendChild(grid);
+        }
+
+        function renderBasics(container, data) {
+            // Chart Section
+            const chartSection = document.createElement('div');
+            chartSection.className = "bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8";
+            chartSection.innerHTML = `
+                <h3 class="text-xl font-bold mb-4">Primitive Data Type Sizes</h3>
+                <div class="chart-container">
+                    <canvas id="typeChart"></canvas>
+                </div>
+                <p class="text-sm text-gray-500 mt-4 text-center">Comparing memory allocation in bytes.</p>
+            `;
+            container.appendChild(chartSection);
+
+            // Code Section
+            const codeSection = document.createElement('div');
+            codeSection.innerHTML = `
+                <h3 class="text-xl font-bold mb-4">Basic Structure</h3>
+                ${createCodeBlock(data.code, "Java")}
+            `;
+            container.appendChild(codeSection);
+
+            // Init Chart
+            setTimeout(() => {
+                initTypeChart(data.types);
+            }, 100);
+        }
+
+        function renderControl(container, data) {
+            data.snippets.forEach(item => {
+                const block = document.createElement('div');
+                block.className = "mb-8";
+                block.innerHTML = `
+                    <h3 class="text-lg font-bold text-warm-accent mb-2">${item.label}</h3>
+                    ${createCodeBlock(item.code, "Java")}
+                `;
+                container.appendChild(block);
+            });
+        }
+
+        function renderOOP(container, data) {
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
+
+            data.pillars.forEach((pillar, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1 group";
+                card.innerHTML = `
+                    <div class="h-2 bg-warm-accent w-full"></div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold text-gray-800">${pillar.title}</h3>
+                            <span class="text-2xl opacity-20 group-hover:opacity-100 transition-opacity">✨</span>
+                        </div>
+                        <p class="font-medium text-warm-accent mb-2">${pillar.summary}</p>
+                        <p class="text-gray-600 text-sm hidden group-hover:block animate-fade-in">${pillar.details}</p>
+                        <div class="text-gray-400 text-xs mt-4 group-hover:hidden">Hover or click for details</div>
+                    </div>
+                `;
+                // Mobile tap interaction support
+                card.onclick = () => {
+                    const detailP = card.querySelector('p.text-sm');
+                    const hintDiv = card.querySelector('.text-xs');
+                    if(detailP.classList.contains('hidden')) {
+                        detailP.classList.remove('hidden');
+                        hintDiv.classList.add('hidden');
+                    } else {
+                        detailP.classList.add('hidden');
+                        hintDiv.classList.remove('hidden');
+                    }
+                };
+                grid.appendChild(card);
+            });
+            container.appendChild(grid);
+        }
+
+        function renderCollections(container, data) {
+            const tableContainer = document.createElement('div');
+            tableContainer.className = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden";
+            
+            let rows = data.data.map(item => `
+                <tr class="hover:bg-warm-bg transition-colors border-b border-gray-100 last:border-0">
+                    <td class="p-4 font-mono text-warm-accent font-bold">${item.interface}</td>
+                    <td class="p-4 font-mono text-gray-800">${item.impl}</td>
+                    <td class="p-4 text-gray-600 text-sm">${item.feature}</td>
+                </tr>
+            `).join('');
+
+            tableContainer.innerHTML = `
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-500 text-sm uppercase tracking-wider">
+                            <th class="p-4 font-semibold">Interface</th>
+                            <th class="p-4 font-semibold">Implementation</th>
+                            <th class="p-4 font-semibold">Characteristics</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <div class="p-4 bg-gray-50 text-xs text-gray-400">
+                    Example Usage:<br>
+                    <code class="text-warm-accent">List&lt;String&gt; list = new ArrayList<>();</code>
+                </div>
+            `;
+            container.appendChild(tableContainer);
+        }
+
+        function renderExceptions(container, data) {
+            const block = document.createElement('div');
+            block.innerHTML = `
+                 <div class="flex items-center space-x-2 mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 text-yellow-800">
+                    <span class="text-2xl">💡</span>
+                    <p class="text-sm">Ideally, catch specific exceptions (e.g., ArithmeticException) before generic ones.</p>
+                </div>
+                ${createCodeBlock(data.code, "Java")}
+            `;
+            container.appendChild(block);
+        }
+
+        function renderModern(container, data) {
+            data.concepts.forEach(c => {
+                 const block = document.createElement('div');
+                block.className = "mb-8";
+                block.innerHTML = `
+                    <h3 class="text-lg font-bold text-warm-accent mb-2">${c.name}</h3>
+                    ${createCodeBlock(c.code, "Java")}
+                `;
+                container.appendChild(block);
+            });
+        }
+
+        function renderMemory(container, data) {
+            const visual = document.createElement('div');
+            visual.className = "flex flex-col md:flex-row gap-6 h-auto md:h-96";
+            
+            // Stack Column
+            visual.innerHTML = `
+                <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
+                    <h3 class="text-center font-bold text-xl text-warm-accent mb-4 border-b pb-2">Stack Memory</h3>
+                    <div class="flex-1 space-y-2 flex flex-col-reverse justify-end p-2 bg-gray-50 rounded inner-shadow">
+                        <div class="bg-red-200 text-red-800 p-2 text-center text-xs rounded shadow-sm">method() call</div>
+                        <div class="bg-red-200 text-red-800 p-2 text-center text-xs rounded shadow-sm">local vars</div>
+                        <div class="bg-red-200 text-red-800 p-2 text-center text-xs rounded shadow-sm">main()</div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-4 text-center">${data.stack}</p>
+                </div>
+
+                <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
+                    <h3 class="text-center font-bold text-xl text-blue-500 mb-4 border-b pb-2">Heap Memory</h3>
+                    <div class="flex-1 relative bg-gray-50 rounded p-2 overflow-hidden">
+                        <!-- Simulated floating objects -->
+                        <div class="absolute top-4 left-4 bg-blue-100 text-blue-800 p-3 rounded-full text-xs shadow-sm w-20 h-20 flex items-center justify-center text-center">Object A</div>
+                        <div class="absolute bottom-10 right-8 bg-blue-100 text-blue-800 p-4 rounded-full text-xs shadow-sm w-24 h-24 flex items-center justify-center text-center">Object B</div>
+                         <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-100 text-blue-800 p-2 rounded-full text-xs shadow-sm w-16 h-16 flex items-center justify-center text-center">String</div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-4 text-center">${data.heap}</p>
+                </div>
+            `;
+            container.appendChild(visual);
+        }
+
+        function renderInterview(container, data) {
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-6";
+
+            data.cards.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "flip-card h-48";
+                card.innerHTML = `
+                    <div class="flip-card-inner shadow-sm rounded-lg">
+                        <div class="flip-card-front">
+                            <h3 class="font-bold text-lg">${item.q}</h3>
+                        </div>
+                        <div class="flip-card-back">
+                            <p class="text-sm px-4">${item.a}</p>
+                        </div>
+                    </div>
+                `;
+                card.onclick = () => card.classList.toggle('flipped');
+                grid.appendChild(card);
+            });
+            container.appendChild(grid);
+            
+            const tip = document.createElement('div');
+            tip.className = "text-center text-gray-400 mt-6 text-sm";
+            tip.innerText = "Click a card to reveal the answer.";
+            container.appendChild(tip);
+        }
+
+        // --- Helper: Code Block Generator ---
+        function createCodeBlock(code, lang) {
+            // Simple syntax highlighting via regex replacement
+            // This is basic and for visual effect only
+            let colored = code
+                .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/\b(public|class|static|void|int|double|boolean|String|if|else|switch|case|default|for|while|try|catch|finally|return|new|extends|implements|interface)\b/g, '<span class="text-pink-400">$1</span>')
+                .replace(/".*?"/g, '<span class="text-green-300">$&</span>')
+                .replace(/\/\/.*/g, '<span class="text-gray-500">$&</span>');
+
+            return `
+                <div class="relative group">
+                    <div class="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button class="bg-gray-700 text-white text-xs px-2 py-1 rounded hover:bg-gray-600" onclick="navigator.clipboard.writeText(\`${code.replace(/`/g, '\\`')}\`)">Copy</button>
+                    </div>
+                    <pre class="bg-code-bg text-code-text p-4 rounded-lg overflow-x-auto font-mono text-sm code-block"><code>${colored}</code></pre>
+                </div>
+            `;
+        }
+
+        // --- Helper: Chart Init ---
+        function initTypeChart(types) {
+            const ctx = document.getElementById('typeChart');
+            if (!ctx) return;
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: types.map(t => t.name),
+                    datasets: [{
+                        label: 'Size (Bytes)',
+                        data: types.map(t => t.size),
+                        backgroundColor: [
+                            'rgba(201, 166, 107, 0.6)', // Warm accent
+                            'rgba(201, 166, 107, 0.8)',
+                            'rgba(74, 74, 74, 0.6)',    // Dark gray
+                            'rgba(74, 74, 74, 0.4)'
+                        ],
+                        borderColor: [
+                            'rgba(201, 166, 107, 1)',
+                            'rgba(201, 166, 107, 1)',
+                            'rgba(74, 74, 74, 1)',
+                            'rgba(74, 74, 74, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.raw} bytes`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Size in Bytes'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Initialization ---
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>

@@ -1,2 +1,2 @@
 # Notes
-This repository houses the complete notes for full stack
+This repository houses the complete notes for full stack software development
