@@ -1145,7 +1145,19 @@
 - Form arrays for dynamic fields
 - Resetting forms
 
-### 11.4 HTTP & HttpClient (Angular 21)
+### 11.4 Forms — Signal-Based (Angular 20+ Experimental)
+- `signalForm()` — top-level form primitive returning a signal-based form group
+- `signalFormControl()` — individual control with `.value` as a signal
+- `signalFormGroup()` — typed group of signal controls
+- `signalFormArray()` — dynamic array of signal controls
+- Reactive validation — validators re-run automatically when signal inputs change
+- Async validators with signal-based status (`pending`, `valid`, `invalid`)
+- `ControlValueAccessor` compatibility — reuse existing custom form controls
+- Two-way binding with `model()` — signal forms + `[(model)]` for parent sync
+- Comparing signal forms vs reactive forms: migration path and trade-offs
+- Known limitations and stability caveats (experimental API surface)
+
+### 11.5 HTTP & HttpClient (Angular 21)
 - `provideHttpClient()` — standalone provider (module-free)
 - `withFetch()` — use native fetch instead of XHR (recommended; required for SSR)
 - `withInterceptors([...])` — functional interceptors array (preferred over class-based)
@@ -1165,7 +1177,7 @@
 - Error interceptor (global HTTP error handling)
 - Caching interceptor pattern with Map-based cache
 
-### 11.5 Change Detection
+### 11.6 Change Detection
 - How Angular's change detection works
 - Zone.js and NgZone
 - Default change detection strategy
@@ -1175,7 +1187,7 @@
 - Change detection cycle order
 - Detaching change detector
 
-### 11.6 Content Projection
+### 11.7 Content Projection
 - Basic content projection: <ng-content>
 - Multi-slot content projection: <ng-content select>
 - NgTemplateOutlet — rendering templates dynamically
@@ -1183,7 +1195,7 @@
 - ng-container — grouping without DOM element
 - ng-template — template definition
 
-### 11.7 Angular Animations
+### 11.8 Angular Animations
 - BrowserAnimationsModule / provideAnimations()
 - trigger, state, style, animate, transition
 - :enter and :leave transitions
@@ -1193,7 +1205,7 @@
 - AnimationBuilder for programmatic animations
 - Reusable animation definitions
 
-### 11.8 Custom Directives
+### 11.9 Custom Directives
 - Creating attribute directives with @Directive
 - ElementRef and Renderer2 for safe DOM manipulation
 - HostListener for events in directives
@@ -1202,7 +1214,7 @@
 - Structural directive creation (*appIf pattern)
 - Directive composition API (Angular 15+)
 
-### 11.10 View Transitions API in Angular
+### 11.11 View Transitions API in Angular
 - `withViewTransitions()` in `provideRouter()` — automatic CSS-animated route transitions
 - `document.startViewTransition()` for manual transitions
 - `view-transition-name` CSS property for element-level transitions
@@ -1927,14 +1939,34 @@
 - Text spacing adjustments
 
 ### 18.7 Angular Accessibility
-- Angular CDK a11y module: FocusTrap, LiveAnnouncer, AriaDescriber
-- Angular Material accessibility built-in
-- RouterLink and focus management on navigation
-- Angular's ARIA support in forms
-- Custom accessible component patterns in Angular
-- LiveAnnouncer service for dynamic announcements
+- Angular CDK a11y module overview: `A11yModule` and its exports
+- `FocusTrap` — trap keyboard focus within a modal or overlay
+- `FocusMonitor` — detect focus origin (mouse, keyboard, touch, program) on any element
+- `InteractivityChecker` — determine if an element is focusable or tabbable
+- `LiveAnnouncer` — programmatically announce messages to screen readers via ARIA live regions
+- `AriaDescriber` — manage `aria-describedby` relationships without ID collisions
+- Angular Material built-in accessibility: roles, labels, and keyboard patterns per component
+- Router focus management — `RouterLink` and automatic focus on navigation
+- Custom `TitleStrategy` for meaningful page titles announced on route change
+- `@angular/cdk/a11y` `isFocusable()` / `isTabbable()` utilities
 
-### 18.8 Accessibility Testing Tools
+### 18.8 Angular ARIA Patterns
+- Binding ARIA attributes dynamically: `[attr.aria-expanded]`, `[attr.aria-controls]`
+- `[attr.aria-hidden]` on decorative elements and icon-only buttons
+- `[attr.aria-label]` vs `[attr.aria-labelledby]` — when to use each in templates
+- `[attr.aria-describedby]` for form field error messages (Angular forms integration)
+- `[attr.aria-live]` and `[attr.aria-atomic]` for dynamic content regions
+- `[attr.aria-busy]` during loading states (skeleton screens, async data)
+- `[attr.role]` — assigning landmark and widget roles to host elements
+- `[attr.aria-selected]`, `[attr.aria-checked]`, `[attr.aria-pressed]` for interactive state
+- `[attr.aria-disabled]` vs the `disabled` attribute — differences in Angular contexts
+- `@HostBinding('attr.aria-*')` — exposing ARIA state from directive/component class
+- `host: { '[attr.aria-*]': '...' }` — declarative host bindings in component metadata
+- `LiveAnnouncer.announce()` — triggering screen reader announcements for route changes, toasts, alerts
+- Focus management after dialog open/close using `FocusTrap` + `afterOpened` / `afterClosed`
+- Skip-link pattern implementation in Angular shell components
+
+### 18.9 Accessibility Testing Tools
 - axe DevTools browser extension
 - Lighthouse accessibility audit
 - WAVE (Web Accessibility Evaluation Tool)
