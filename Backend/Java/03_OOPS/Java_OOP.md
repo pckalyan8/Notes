@@ -580,6 +580,111 @@ public class UserRepository extends BaseRepository<User, Long> {
     public void delete(Long id) { /* SQL delete */ }
 }
 ```
+In Object-Oriented Programming (OOP), abstract classes and interfaces are both used to achieve abstraction—hiding the implementation details and only showing the essential features to the user. However, they serve different fundamental purposes and have different rules.
+
+Here is a breakdown of the differences, conceptually and technically.
+
+1. The Core Concept ("Is-a" vs. "Can-do")
+
+Abstract Class (The "Is-a" Relationship): Use this when classes share a common core identity. It acts as a foundational base class.
+
+Example: A Dog is an Animal. Therefore, Animal should be an abstract class. You can define shared features like sleep() or breathe() once in the Animal class, and leave makeSound() abstract for the specific animal to implement.
+
+Interface (The "Can-do" Relationship): Use this to define a specific capability or role, regardless of what the object actually is.
+
+Example: A Bird, an Airplane, and a Superhero are completely different things, but they all can fly. Therefore, Flyable should be an interface that all three classes implement.
+
+2. Key Differences Comparison
+Feature	Abstract Class	Interface
+Inheritance	A class can inherit from only one abstract class (Single Inheritance).	A class can implement multiple interfaces.
+State (Variables)	Can contain state (instance variables) that are specific to an object, as well as constants.	Traditionally cannot contain state. Can only contain static constants (final variables).
+Constructors	Can have constructors. They are called when a child class is created.	Cannot have constructors.
+Methods	Can have both abstract methods (no body) and concrete methods (fully written code).	Traditionally only had abstract methods. (Note: Modern Java and C# allow "default" methods with implementation).
+Access Modifiers	Methods and variables can be public, protected, or private.	Methods are usually implicitly public.
+Speed/Performance	Slightly faster (due to how the compiler looks up methods).	Slightly slower (interface method lookup takes slightly longer, though negligible in modern systems).
+3. When should you use which?
+
+Use an Abstract Class when:
+
+You have a group of closely related classes (e.g., Car, Truck, Motorcycle).
+
+You want to share common code among these classes so you don't have to rewrite it.
+
+You need to declare non-public methods or properties (e.g., protected helper methods that only child classes can use).
+
+You need to manage object state (e.g., you want the base class to hold the speed and color variables).
+
+Use an Interface when:
+
+You expect unrelated classes to implement your abstraction (e.g., a Drone and a Database might both implement a Loggable interface).
+
+You want to specify the behavior of a particular data type, but are not concerned about who implements its behavior.
+
+You need to take advantage of Multiple Inheritance. Because a class can implement multiple interfaces, you can mix and match behaviors (e.g., a Duck class can implement both Swimmable and Flyable).
+
+A Quick Code Example (Java/C# style)
+
+Abstract Class:
+
+code
+Java
+download
+content_copy
+expand_less
+// Base identity
+abstract class Animal {
+    String name; // Can have state
+
+    public Animal(String name) { // Can have a constructor
+        this.name = name;
+    }
+
+    public void sleep() { // Can have implemented methods
+        System.out.println(name + " is sleeping.");
+    }
+
+    public abstract void makeSound(); // Abstract method
+}
+
+Interface:
+
+code
+Java
+download
+content_copy
+expand_less
+// A specific capability
+interface Flyable {
+    int MAX_SPEED = 1000; // Implicitly public, static, and final (constant)
+
+    void fly(); // Implicitly public and abstract
+}
+
+Putting it together:
+
+code
+Java
+download
+content_copy
+expand_less
+// Bat "is an" Animal, and it "can fly"
+class Bat extends Animal implements Flyable {
+    public Bat(String name) {
+        super(name);
+    }
+
+    @Override
+    public void makeSound() {
+        System.out.println("Squeak!");
+    }
+
+    @Override
+    public void fly() {
+        System.out.println("Flapping leathery wings...");
+    }
+}
+
+Note: In modern versions of languages like Java (8+) and C# (8+), the line between the two has blurred slightly because interfaces can now contain "default" implementations for methods. However, the rule regarding state (interfaces cannot hold instance state) and inheritance (you can only extend one abstract class) remains the strict dividing line.
 
 ### When to Use Abstract Classes
 
