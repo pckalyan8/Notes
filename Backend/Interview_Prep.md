@@ -10,20 +10,34 @@
 ### Java Core
 - Which java versions have you worked on?
 - What are the important features of Java 8?
+    - functional interfaces
+    - lambda expressions
+    - Stream API
+    - default methods
+    - Optional class
+    - New Date & Time API
 - What are the features of Java 17?
+    - sealed classes
+    - pattern matching
+    - records
 - What are the features of Java 21?
-- Difference between List, Set and Map.
+    - virtual threads
+    - record patterns
 - String vs String Builder vs String Buffer
+- When to use interface and abstract class and class
 - Exception Hierarchy in Java
 - Checked vs UnChecked exceptions with examples
 - What is volatile?
+    - stores the variable in main memory instead of cache so that it always gets latest value
 - What is synchonozied?
+    - synchronized is a locking mechanism. It ensures that only one thread can execute a block of code or a method at a time.
 - Java Memory Model (Stack vs Heap).
 - Different layers of JVM
 - What is garbage collection?
 - How do we skip Garbage collection?
 - How to skip finally block?
 - Have you worked on collection API?
+    - Difference between List, Set and Map.
     - ArrayList vs LinkedList
     - reason for these 2 data structures
     - internal data structure for linked list
@@ -31,6 +45,9 @@
     - insert node in linked list vs arrayList
     - Hashmap vs Linked Hashmap
     - What is hashmap?
+    - what is collision in hashmap
+    - HashMap internal interface
+        - How does it work internally
     
     ```java
     // insert the record
@@ -41,9 +58,7 @@
     // What is size, what is final value this map returns? 
     ```
 - write a query to get total number of emp from each department (10) (using streams and also SQL)
-
-- HashMap internal interface
-    - How does it work internally
+- what is completablefuture in java 8
 
 
 
@@ -54,6 +69,29 @@
 - What is default method in interface?
 - What is Stream API? why was it introduced?
     - terminal & intermediate operations in java 8
+    - predicate vs function java
+    - print each character at an even position (indices 0, 2, 4, 6, and 8) from the string "DummyString" using Java 8 Streams
+    - stream api in java 8 display the names of all employees belonging to each project A = Raju, Ram, Rakesh, LaxmiB = Raju1, Ram1, RameshC = Raju2, Ram2
+    ```java
+    List<Employee> empList = Arrays.asList(
+            new Employee("Raju", "A"), new Employee("Ram", "A"), 
+            new Employee("Rakesh", "A"), new Employee("Laxmi", "A"),
+            new Employee("Raju1", "B"), new Employee("Ram1", "B"), 
+            new Employee("Ramesh", "B"),
+            new Employee("Raju2", "C"), new Employee("Ram2", "C")
+        );
+
+        // Grouping by project and mapping to employee names
+        Map<String, List<String>> projectMap = empList.stream()
+            .collect(Collectors.groupingBy(
+                Employee::getProject,
+                Collectors.mapping(Employee::getName, Collectors.toList())
+            ));
+
+        // Display results
+        projectMap.forEach((project, names) -> 
+            System.out.println(project + " = " + String.join(", ", names)));
+    ```
 - Difference between map() and filter()
 - What is Optional?
     - Why was Optional introduced?
@@ -93,6 +131,7 @@
 - What configurations are needed in spring but not in spring boot?
 - What annotations have you used in springboot?
 - Explain `@RestController`, `@Service` and `@Repository`.
+- `@RestController` vs `@Controller` in spring boot
 - How do you develop REST API's in Spring boot?
 - Explain Controller-Service-Repository flow?
 - How do you handle exceptions in Spring Boot?
@@ -110,11 +149,14 @@
 - what is application.properties
 - how to handle multiple exceptions in a single block?
 - component scan vs entity scan?
-
+- What are AOP Proxies?
+- What is actuator in spring boot?
+- what is filter and interceptor in spring boot?
 
 ### Spring MVC
 - What is DispatchServlet?
 - How does request flow work in Spring MVC?
+- Explain spring mvc architecture
 
 ### Spring Security
 - What is authentication and authorization?
@@ -144,8 +186,10 @@
 ### Microservices
 - What is microservices architecture?
 - Monolithic vs microservices
+- what is latency and throughput
 - What is API Gateway? what are the uses?
 - What is API Gateway filters?
+- What is circuit breaker?
 - What is circuit breaker pattern, how do you implement the same?
 - What is Saga pattern
 - Multithreading
@@ -154,6 +198,10 @@
     - what are deadlocks, how do we analize the deadlock situation? What are different tools used to analize deadlocks
     - how to avoid deadlocks
 - What is retry mechanism?
+- What is Kafka?
+- What is redis?
+- unicast vs multicast in context of gRPC and Kafka
+- what is sidecar pattern
 
 ### Design & Principles
 - What challenges did you face in projects?
@@ -189,6 +237,7 @@
 - does MySQL support cluster index?
 - `YOU` in MYSQL
 - what is triggers?
+- SQL vs NoSQL, why are NoSQL getting popular? How does each perform?
 
 
 ### Miscellaneous
@@ -229,6 +278,7 @@
 - Even in MongoDB, have you used?
 - In MongoDB, how to return aggregate query
 - Have you inserted data or files in MongoDB?
+- common use cases of production grade multithreading code in java
 
 
 
@@ -277,7 +327,6 @@
 - Any performance issues when you worked on springboot?
 - What is thread pooling?
 - In performance wise, what all you can do in caching?
-- What is Kafka?
 - High level azure active directories, registries and subscriptions
 - Dev AI bot - what all different API you used while developing the AI lib
 - What's the life of JWT token
